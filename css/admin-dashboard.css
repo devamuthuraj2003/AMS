@@ -1,0 +1,13 @@
+body {
+    font-family: 'Poppins', sans-serif;
+}
+
+.navbar {
+    margin-bottom: 20px;
+}
+
+.btn-primary {
+    font-weight: 500;
+    padding: 15px;
+    font-size: 16px;
+}
