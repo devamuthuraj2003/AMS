@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/teacher-dashboard.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row mb-4">
+            <div class="col-12 text-end">
+                <p id="teacherInfo" class="mb-0"></p>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8 col-lg-6">
+                <div class="card p-4 shadow-sm">
+                    <div class="card-body text-center">
+                        <h1 class="card-title mb-4">Welcome, <span id="teacherName"></span></h1>
+                        <div class="d-grid gap-3">
+                            <a href="create-classroom.html" class="btn btn-primary">Create Classroom</a>
+                            <a href="class-list.html" class="btn btn-secondary">Put Attendance</a>
+                            <a href="view-classes.html" class="btn btn-info">View Classes</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<!-- <script>
+    // Simulate getting teacher info from localStorage or session
+    const teacher = JSON.parse(localStorage.getItem('teacher'));
+
+    if (teacher) {
+        document.getElementById('teacherName').textContent = teacher.name;
+        document.getElementById('teacherInfo').textContent = `Email: ${teacher.email}`;
+    } else {
+        alert('No teacher data found');
+        window.location.href = 'teacher-login.html'; // Redirect to login if no data
+    }
+</script> -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</html>

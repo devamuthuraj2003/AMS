@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4" id="classroomName">Classroom Attendance</h1>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceTable">
+                <!-- Rows will be dynamically inserted here -->
+            </tbody>
+        </table>
+        <button id="submitAttendance" class="btn btn-success">Submit Attendance</button>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const classroomId = urlParams.get('id');
+
+        if (!classroomId) {
+            // alert('No classroom ID provided');
+            window.location.href = 'class-list.html';
+        }
+
+        fetch(`http://localhost:3000/students/${classroomId}`)
+            .then(response => response.json())
+            .then(students => {
+                const tableBody = document.getElementById('attendanceTable');
+                tableBody.innerHTML = ''; // Clear the table body
+
+                students.forEach(student => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${student.name}</td>
+                        <td>
+                            <button class="btn btn-success present-btn">Present</button>
+                            <button class="btn btn-danger absent-btn">Absent</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error fetching students:', error));
+
+        document.getElementById('submitAttendance').addEventListener('click', function() {
+            const attendance = {};
+            document.querySelectorAll('#attendanceTable tr').forEach(row => {
+                const name = row.querySelector('td').innerText;
+                const status = row.querySelector('.present-btn').classList.contains('active') ? 'Present' : 'Absent';
+                attendance[name] = status;
+            });
+
+            fetch('http://localhost:3000/mark-attendance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ classroomId, attendance }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Attendance marked successfully');
+                } else {
+                    alert('Error marking attendance');
+                }
+            })
+            .catch(error => console.error('Error marking attendance:', error));
+        });
+
+        document.querySelectorAll('.present-btn, .absent-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const buttons = row.querySelectorAll('button');
+                buttons.forEach(btn => btn.classList.remove('active'));
+
+                this.classList.add('active');
+                if (this.classList.contains('present-btn')) {
+                    this.classList.remove('btn-danger');
+                    this.classList.add('btn-success');
+                } else {
+                    this.classList.remove('btn-success');
+                    this.classList.add('btn-danger');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

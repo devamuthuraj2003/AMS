@@ -34,28 +34,30 @@
     </div>
     <script>
         document.getElementById('addTeacherForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const name = document.getElementById('teacherName').value;
-            const email = document.getElementById('teacherEmail').value;
+    event.preventDefault();
+    const name = document.getElementById('teacherName').value;
+    const email = document.getElementById('teacherEmail').value;
+    const subject = document.getElementById('teacherSubject').value;
+    const phone = document.getElementById('teacherPhone').value;
 
-            fetch('http://localhost:3000/add-teacher', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name, email }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Teacher added successfully');
-                    document.getElementById('addTeacherForm').reset();
-                } else {
-                    alert('Error adding teacher');
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        });
+    fetch('http://localhost:3000/add-teacher', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, subject, phone }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Teacher added successfully');
+            document.getElementById('addTeacherForm').reset();
+        } else {
+            alert('Error adding teacher');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+});
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>

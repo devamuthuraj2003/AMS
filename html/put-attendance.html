@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Put Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Put Attendance</h1>
+        <div id="classrooms"></div>
+        <div id="attendanceForm" style="display: none;">
+            <h3>Attendance for <span id="classroomName"></span></h3>
+            <form id="attendanceFormContent">
+                <div id="students"></div>
+                <button type="submit" class="btn btn-primary">Submit Attendance</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        function loadClassrooms() {
+            fetch('http://localhost:3000/classrooms')
+                .then(response => response.json())
+                .then(data => {
+                    const classroomsDiv = document.getElementById('classrooms');
+                    classroomsDiv.innerHTML = '<h3>Select Classroom</h3>';
+                    data.forEach(classroom => {
+                        const link = document.createElement('a');
+                        link.href = '#';
+                        link.textContent = classroom.name;
+                        link.onclick = () => loadStudents(classroom._id, classroom.name);
+                        classroomsDiv.appendChild(link);
+                        classroomsDiv.appendChild(document.createElement('br'));
+                    });
+                });
+        }
+
+        function loadStudents(classroomId, classroomName) {
+            fetch(`http://localhost:3000/students/${classroomId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const studentsDiv = document.getElementById('students');
+                    studentsDiv.innerHTML = '';
+                    data.forEach(student => {
+                        const div = document.createElement('div');
+                        div.classList.add('mb-2');
+                        div.innerHTML = `
+                            <span>${student.name}</span>
+                            <button class="btn btn-success ms-2" onclick="setAttendance('${student._id}', 'present')">Present</button>
+                            <button class="btn btn-danger ms-2" onclick="setAttendance('${student._id}', 'absent')">Absent</button>
+                        `;
+                        studentsDiv.appendChild(div);
+                    });
+                    document.getElementById('attendanceForm').style.display = 'block';
+                    document.getElementById('classroomName').textContent = classroomName;
+                    document.getElementById('attendanceFormContent').setAttribute('data-classroom-id', classroomId);
+                });
+        }
+
+        function setAttendance(studentId, status) {
+            document.querySelectorAll('#students button').forEach(button => {
+                button.classList.remove('btn-success', 'btn-danger');
+                button.classList.add('btn-secondary');
+            });
+            document.querySelectorAll('#students button').forEach(button => {
+                if (button.textContent === status.charAt(0).toUpperCase() + status.slice(1)) {
+                    button.classList.remove('btn-secondary');
+                    button.classList.add(status === 'present' ? 'btn-success' : 'btn-danger');
+                }
+            });
+        }
+
+        document.getElementById('attendanceFormContent').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const classroomId = this.getAttribute('data-classroom-id');
+            const attendance = {};
+
+            document.querySelectorAll('#students button').forEach(button => {
+                const studentId = button.getAttribute('data-student-id');
+                const status = button.textContent.toLowerCase();
+                attendance[studentId] = status;
+            });
+
+            fetch('http://localhost:3000/mark-attendance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ classroomId, attendance }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Attendance marked successfully');
+                } else {
+                    alert('Error marking attendance');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        loadClassrooms();
+    </script>
+</body>
+</html>

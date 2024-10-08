@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Class List</h1>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Classroom Name</th>
+                    <th>Subject</th>
+                    <th>Schedule</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="classListTable">
+                <!-- Rows will be dynamically inserted here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Fetch the list of classrooms and populate the table
+        fetch('http://localhost:3000/classrooms')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('classListTable');
+                tableBody.innerHTML = ''; // Clear the table body
+
+                data.forEach(classroom => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${classroom.name}</td>
+                        <td>${classroom.subject}</td>
+                        <td>${classroom.schedule}</td>
+                        <td>
+                            <a href="classroom-attendance.html?id=${classroom._id}" class="btn btn-primary">Manage Attendance</a>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error fetching classrooms:', error));
+    </script>
+</body>
+</html>
