@@ -5,6 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Classroom Attendance</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom styles for buttons */
+        .btn-present {
+            background-color: green; /* Dark green */
+            color: white; /* White text */
+        }
+        .btn-absent {
+            background-color: white; /* White background */
+            color: black; /* Black text */
+            border: 1px solid #ccc; /* Light border */
+        }
+        .btn-present.active {
+            background-color: green; /* Dark green */
+            color: white; /* White text */
+        }
+        .btn-absent.active {
+            background-color: red; /* Red background for active absent button */
+            color: white; /* White text for active absent button */
+        }
+        .btn-present.inactive {
+            background-color: white; /* White background for inactive present button */
+            color: black; /* Black text for inactive present button */
+        }
+        .btn-absent.inactive {
+            background-color: white; /* White background for inactive absent button */
+            color: black; /* Black text for inactive absent button */
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
@@ -12,7 +40,9 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Student Name</th>
+                    <th>SNO</th>
+                    <th>Reg No</th>
+                    <th>Consent Name</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -21,6 +51,7 @@
             </tbody>
         </table>
         <button id="submitAttendance" class="btn btn-success">Submit Attendance</button>
+        <div id="attendanceSummary" class="mt-4"></div>
     </div>
 
     <script>
@@ -28,71 +59,112 @@
         const classroomId = urlParams.get('id');
 
         if (!classroomId) {
-            // alert('No classroom ID provided');
+            // Redirect if no classroom ID is provided
             window.location.href = 'class-list.html';
         }
 
+        // Fetch students from the server for the given classroom
         fetch(`http://localhost:3000/students/${classroomId}`)
             .then(response => response.json())
             .then(students => {
+                // Sort students by registration number
+                students.sort((a, b) => a.roll.localeCompare(b.roll));
+
                 const tableBody = document.getElementById('attendanceTable');
                 tableBody.innerHTML = ''; // Clear the table body
 
-                students.forEach(student => {
+                students.forEach((student, index) => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${student.roll}</td>
                         <td>${student.name}</td>
                         <td>
-                            <button class="btn btn-success present-btn">Present</button>
-                            <button class="btn btn-danger absent-btn">Absent</button>
+                            <button class="btn btn-present present-btn active">Present</button>
+                            <button class="btn btn-absent absent-btn">Absent</button>
                         </td>
                     `;
+                    row.setAttribute('data-student-id', student._id); // Store student ID in the row
                     tableBody.appendChild(row);
+                });
+
+                // Set up click handlers for Present/Absent buttons
+                document.querySelectorAll('.present-btn, .absent-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const row = this.closest('tr');
+                        const presentButton = row.querySelector('.present-btn');
+                        const absentButton = row.querySelector('.absent-btn');
+
+                        if (this.classList.contains('absent-btn')) {
+                            // If Absent button is clicked
+                            presentButton.classList.remove('active'); // Deactivate present button
+                            presentButton.classList.add('inactive'); // Set present button to inactive styles
+                            absentButton.classList.add('active'); // Activate absent button
+                            absentButton.classList.add('btn-absent'); // Red style for absent button
+                        } else {
+                            // If Present button is clicked
+                            absentButton.classList.remove('active'); // Deactivate absent button
+                            absentButton.classList.remove('btn-absent'); // Reset absent button styles
+                            presentButton.classList.add('active'); // Activate present button
+                            presentButton.classList.remove('inactive'); // Set present button to active styles
+                        }
+                    });
                 });
             })
             .catch(error => console.error('Error fetching students:', error));
 
+        // Handle attendance submission
         document.getElementById('submitAttendance').addEventListener('click', function() {
-            const attendance = {};
+            const attendance = [];
+            const absentNames = [];
+
             document.querySelectorAll('#attendanceTable tr').forEach(row => {
-                const name = row.querySelector('td').innerText;
-                const status = row.querySelector('.present-btn').classList.contains('active') ? 'Present' : 'Absent';
-                attendance[name] = status;
+                const studentId = row.getAttribute('data-student-id'); // Get student ID from the row
+                const isPresent = row.querySelector('.present-btn').classList.contains('active');
+
+                attendance.push({
+                    studentId: studentId,
+                    status: isPresent ? 'present' : 'absent' // Use 'present' or 'absent' for status
+                });
+
+                if (!isPresent) {
+                    const name = row.querySelector('td:nth-child(3)').innerText; // Get the student's name
+                    absentNames.push(name); // Collect absent names
+                }
             });
 
+            // Send attendance data to the server
             fetch('http://localhost:3000/mark-attendance', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ classroomId, attendance }),
+                body: JSON.stringify({ classroomId, attendance }), // Send the structured attendance array
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Attendance marked successfully');
+                    const presentCount = attendance.filter(a => a.status === 'present').length;
+                    const absentCount = absentNames.length;
+
+                    // Disable buttons after submission
+                    document.querySelectorAll('.present-btn, .absent-btn').forEach(button => {
+                        button.disabled = true;
+                    });
+
+                    // Show attendance summary
+                    const summaryHtml = `
+                        <h5>Attendance Summary:</h5>
+                        <p>Total Present: ${presentCount}</p>
+                        <p>Total Absent: ${absentCount}</p>
+                        <p>Absent Students: ${absentNames.join(', ')}</p>
+                    `;
+                    document.getElementById('attendanceSummary').innerHTML = summaryHtml;
                 } else {
-                    alert('Error marking attendance');
+                    alert('Error marking attendance: ' + data.message);
                 }
             })
-            .catch(error => console.error('Error marking attendance:', error));
-        });
-
-        document.querySelectorAll('.present-btn, .absent-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const row = this.closest('tr');
-                const buttons = row.querySelectorAll('button');
-                buttons.forEach(btn => btn.classList.remove('active'));
-
-                this.classList.add('active');
-                if (this.classList.contains('present-btn')) {
-                    this.classList.remove('btn-danger');
-                    this.classList.add('btn-success');
-                } else {
-                    this.classList.remove('btn-success');
-                    this.classList.add('btn-danger');
-                }
-            });
+            .catch(error => console.error('Error submitting attendance:', error));
         });
     </script>
 </body>
